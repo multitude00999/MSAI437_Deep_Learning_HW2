@@ -2,4 +2,4 @@
 
 # Datasets
 
-Dataset is provided [ibean](https://github.com/AI-Lab-Makerere/ibean/tree/master)
+Dataset is provided by [ibean](https://github.com/AI-Lab-Makerere/ibean/tree/master)
