@@ -17,11 +17,11 @@ import argparse
 # region Global Constants
 IMG_WIDTH = 224  # width of image
 IMG_HEIGHT = 224  # height of image
-BATCH_SIZE = 32  # batch size
-SEED = 42   # random seed
-DROPOUT = 0.3   # dropout probability
-LEARNING_RATE = 5e-3    # learning rate
-NUM_EPOCHS = 20    # number of epochs
+BATCH_SIZE = 64  # batch size
+SEED = 76   # random seed
+DROPOUT = 0.25   # dropout probability
+LEARNING_RATE = 7e-3    # learning rate
+NUM_EPOCHS = 30    # number of epochs
 CNN_MODEL_PATH = 'cnn_classification_model.pt'  # path for saved CNN model
 NUM_CLASSES = 2     # number of class labels
 # endregion Global Constants
@@ -72,12 +72,7 @@ class ConvolutionalNeuralNetwork(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.cnn_layers = Sequential(
-            Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
-            ReLU(inplace=True),
-            BatchNorm2d(32),
-            MaxPool2d(kernel_size=2, stride=2),
-            Dropout(p=DROPOUT),
-            Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+            Conv2d(3, 64, kernel_size=3, stride=1, padding=1),
             ReLU(inplace=True),
             BatchNorm2d(64),
             MaxPool2d(kernel_size=2, stride=2),
@@ -87,15 +82,20 @@ class ConvolutionalNeuralNetwork(torch.nn.Module):
             BatchNorm2d(128),
             MaxPool2d(kernel_size=2, stride=2),
             Dropout(p=DROPOUT),
-            Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+            Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
             ReLU(inplace=True),
-            BatchNorm2d(128),
+            BatchNorm2d(256),
+            MaxPool2d(kernel_size=2, stride=2),
+            Dropout(p=DROPOUT),
+            Conv2d(256, 512, kernel_size=3, stride=1, padding=1),
+            ReLU(inplace=True),
+            BatchNorm2d(512),
             MaxPool2d(kernel_size=2, stride=2),
             Dropout(p=DROPOUT),
         )
 
         self.linear_layers = Sequential(
-            Linear(128 * 14 * 14, 512),
+            Linear(512 * 14 * 14, 512),
             ReLU(inplace=True),
             Dropout(),
             Linear(512, 256),
@@ -104,7 +104,7 @@ class ConvolutionalNeuralNetwork(torch.nn.Module):
             Linear(256, 10),
             ReLU(inplace=True),
             Dropout(),
-            Linear(10, 2)
+            Linear(10, NUM_CLASSES)
         )
 
     def forward(self, x):
