@@ -117,9 +117,7 @@ class ConvolutionalNeuralNetwork(torch.nn.Module):
 # endregion CNN Class
 
 def train_epoch(cnn_model, optimizer, criterion, train_data):
-    train_loss = 0.0
     training_loss = []
-    training_accuracy = []
     predictions = []
     targets = []
     for i, (x, y) in enumerate(train_data):
@@ -135,13 +133,11 @@ def train_epoch(cnn_model, optimizer, criterion, train_data):
         softmax = torch.exp(outputs).detach().cpu()
         prob = list(softmax.numpy())
         predictions.append(np.argmax(prob, axis=1))
-        targets.append(y)
+        targets.append(y.cpu())
 
-    for i in range(len(predictions)):
-        training_accuracy.append(accuracy_score(targets[i].cpu(), predictions[i]))
 
+    training_accuracy = accuracy_score(targets, predictions)
     training_loss = np.average(training_loss)
-    training_accuracy = np.average(training_accuracy)*100
 
     return training_loss, training_accuracy
 
@@ -149,25 +145,24 @@ def eval_model(cnn_model, criterion, valid_data):
 
     predictions = []
     target = []
-    accuracy = []
-    epoch_loss = 0.0
+    epoch_loss = []
     with torch.no_grad():
         for i, (x, y) in enumerate(valid_data):
             x, y = x.to(device), y.to(device)
 
             output = cnn_model(x)
             loss = criterion(output, y)
-            epoch_loss += loss.item()
+            epoch_loss.append(loss.item())
             softmax = torch.exp(output).cpu()
             prob = list(softmax.numpy())
             prediction = np.argmax(prob, axis=1)
             predictions.append(prediction)
             target.append(y.cpu())
 
-    for i in range(len(predictions)):
-        accuracy.append(accuracy_score(target[i], predictions[i]))
+    accuracy = accuracy_score(target, predictions)
+    epoch_loss = np.average(epoch_loss)
 
-    return epoch_loss/(i+1), np.average(accuracy)*100, predictions, target
+    return epoch_loss, accuracy, predictions, target
 
 def run_CNN(train_data, valid_data):
     # model
