@@ -292,8 +292,8 @@ def main():
     torch.manual_seed(SEED)
 
     # data loading
-    train_dir = "Computer_Vision_iBean_Dataset/beans/train"
-    valid_dir = "Computer_Vision_iBean_Dataset/beans/valid"
+    train_dir = "beans/train"
+    valid_dir = "beans/valid"
     train_data, valid_data = load_data(train_dir, valid_dir)
 
     if params.model == 'CNN':
