@@ -55,14 +55,14 @@ def load_data(train_dir, valid_dir):
     train_data = torch.utils.data.DataLoader(
         train_set,
         batch_size=BATCH_SIZE,
-        shuffle=False
+        shuffle=True
     )
 
     # define a loader for the validation data
     valid_data = torch.utils.data.DataLoader(
         valid_set,
         batch_size=BATCH_SIZE,
-        shuffle=False
+        shuffle=True
     )
     return train_data, valid_data
 # endregion Data Loading
