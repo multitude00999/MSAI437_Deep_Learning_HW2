@@ -4,15 +4,14 @@ from torchvision import transforms
 from torchvision.datasets import ImageFolder
 from torch.utils.data.dataloader import DataLoader
 import matplotlib.pyplot as plt
-from torch.nn import Linear, ReLU, CrossEntropyLoss, Sequential, Conv2d, MaxPool2d, Module, Softmax, BatchNorm2d, Dropout
+from torch.nn import Linear, ReLU, CrossEntropyLoss, Sequential, Conv2d, MaxPool2d, BatchNorm2d, Dropout
 import torch.optim as optim
-import pandas as pd
 from sklearn.metrics import accuracy_score
 import numpy as np
 import seaborn as sns
-import torch.nn.functional as F
-from torch.autograd import Variable
+from sklearn.metrics import confusion_matrix, classification_report
 import argparse
+from statistics import mean
 # endregion Imports
 
 # region Global Constants
@@ -46,7 +45,9 @@ def load_data(train_dir, valid_dir):
         # resize
         transforms.Resize((IMG_HEIGHT, IMG_WIDTH)),
         # transform to tensors
-        transforms.ToTensor()
+        transforms.ToTensor(),
+        # normalize
+        transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
     ])
     train_set = ImageFolder(
         root=train_dir, transform=transformation)
@@ -161,12 +162,12 @@ def eval_model(cnn_model, criterion, valid_data):
             prob = list(softmax.numpy())
             prediction = np.argmax(prob, axis=1)
             predictions.append(prediction)
-            target.append(y)
+            target.append(y.cpu())
 
     for i in range(len(predictions)):
-        accuracy.append(accuracy_score(target[i].cpu(), predictions[i]))
+        accuracy.append(accuracy_score(target[i], predictions[i]))
 
-    return epoch_loss/(i+1), np.average(accuracy)*100
+    return epoch_loss/(i+1), np.average(accuracy)*100, predictions, target
 
 def run_CNN(train_data, valid_data):
     # model
@@ -178,14 +179,19 @@ def run_CNN(train_data, valid_data):
     valid_losses = []
     train_accs = []
     valid_accs = []
+    predictions = []
+    targets = []
+
 
     for epoch in range(1, NUM_EPOCHS + 1):
         train_loss, train_acc = train_epoch(cnn_model, optimizer, criterion, train_data)
         train_losses.append(train_loss)
         train_accs.append(train_acc)
-        valid_loss, valid_acc = eval_model(cnn_model, criterion, valid_data)
+        valid_loss, valid_acc, pred, target = eval_model(cnn_model, criterion, valid_data)
         valid_losses.append(valid_loss)
         valid_accs.append(valid_acc)
+        predictions.append(pred)
+        targets.append(target)
 
         print('epoch:', epoch, '\t training loss:', train_loss, '\t training accuracy:', train_acc,
               '\t validation loss:', valid_loss, '\t validation accuracy:', valid_acc)
@@ -193,7 +199,46 @@ def run_CNN(train_data, valid_data):
     # save the model
     torch.save(cnn_model.state_dict(), CNN_MODEL_PATH)
 
+    # plots
+    plot_CNN_learning_curves(train_losses, valid_losses, train_accs,
+                              valid_accs)
 
+    plot_CNN_confusion_matrix(predictions, targets)
+
+
+def plot_CNN_learning_curves(train_losses, valid_losses, train_accs, valid_accs):
+    train_losses = [mean(train_loss) for train_loss in train_losses]
+    train_accs = [mean(train_acc) for train_acc in train_accs]
+    epochs = [i for i in range(NUM_EPOCHS)]
+    fig, ax = plt.subplots(1, 2)
+    fig.set_size_inches(20, 10)
+
+    ax[0].plot(epochs, train_accs, 'go-', label='Training Accuracy (CNN)')
+    ax[0].plot(epochs, valid_accs, 'ro-', label='validation Accuracy (CNN)')
+    ax[0].set_title('Training & Validation Accuracy (CNN)')
+    ax[0].legend()
+    ax[0].set_xlabel("Epochs")
+    ax[0].set_ylabel("Accuracy")
+
+    ax[1].plot(epochs, train_losses, 'go-', label='Training Loss (CNN)')
+    ax[1].plot(epochs, valid_losses, 'ro-', label='Validation Loss (CNN)')
+    ax[1].set_title('Training & Validation Loss (CNN)')
+    ax[1].legend()
+    ax[1].set_xlabel("Epochs")
+    ax[1].set_ylabel("Loss")
+
+    plt.show()
+
+def plot_CNN_confusion_matrix(preds, targets):
+    cm = confusion_matrix(preds, targets)
+    plt.figure(figsize=(6, 6))
+    sns.heatmap(cm, cmap="Blues", linecolor='black', linewidth=1, annot=True, fmt='', xticklabels=['REAL', 'FAKE'],
+                yticklabels=['REAL', 'FAKE'])
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    plt.show()
+
+    print(classification_report(targets, preds, target_names=['Predicted Fake', 'Predicted True']))
 
 
 def run_AutoEncoder(train_data, valid_data):
