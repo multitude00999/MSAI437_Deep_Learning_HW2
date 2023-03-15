@@ -18,9 +18,9 @@ from statistics import mean
 IMG_WIDTH = 224  # width of image
 IMG_HEIGHT = 224  # height of image
 BATCH_SIZE = 64  # batch size
-SEED = 76   # random seed
+SEED = 128   # random seed
 DROPOUT = 0.25   # dropout probability
-LEARNING_RATE = 7e-3    # learning rate
+LEARNING_RATE = 5e-3    # learning rate
 NUM_EPOCHS = 30    # number of epochs
 CNN_MODEL_PATH = 'cnn_classification_model.pt'  # path for saved CNN model
 NUM_CLASSES = 2     # number of class labels
@@ -135,16 +135,18 @@ def train_epoch(cnn_model, optimizer, criterion, train_data):
         predictions.append(np.argmax(prob, axis=1))
         targets.append(y.cpu())
 
-
-    training_accuracy = accuracy_score(targets, predictions)
+    accuracy = []
+    for i in range(len(predictions)):
+        accuracy.append(accuracy_score(targets[i], predictions[i]))
     training_loss = np.average(training_loss)
+    training_accuracy = np.average(accuracy) * 100
 
     return training_loss, training_accuracy
 
 def eval_model(cnn_model, criterion, valid_data):
 
     predictions = []
-    target = []
+    targets = []
     epoch_loss = []
     with torch.no_grad():
         for i, (x, y) in enumerate(valid_data):
@@ -157,12 +159,15 @@ def eval_model(cnn_model, criterion, valid_data):
             prob = list(softmax.numpy())
             prediction = np.argmax(prob, axis=1)
             predictions.append(prediction)
-            target.append(y.cpu())
+            targets.append(y.cpu())
 
-    accuracy = accuracy_score(target, predictions)
+    accuracy = []
+    for i in range(len(predictions)):
+        accuracy.append(accuracy_score(targets[i], predictions[i]))
+    valid_accuracy = np.average(accuracy) * 100
     epoch_loss = np.average(epoch_loss)
 
-    return epoch_loss, accuracy, predictions, target
+    return epoch_loss, valid_accuracy, predictions, targets
 
 def run_CNN(train_data, valid_data):
     # model
