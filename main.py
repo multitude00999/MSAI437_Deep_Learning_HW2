@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from torch.nn import Linear, ReLU, CrossEntropyLoss, Sequential, Conv2d, MaxPool2d, Module, Softmax, BatchNorm2d, Dropout
 import torch.optim as optim
 import pandas as pd
+from sklearn.metrics import accuracy_score
 import numpy as np
 import seaborn as sns
 import torch.nn.functional as F
@@ -114,38 +115,85 @@ class ConvolutionalNeuralNetwork(torch.nn.Module):
         return x
 # endregion CNN Class
 
+def train_epoch(cnn_model, optimizer, criterion, train_data):
+    train_loss = 0.0
+    training_loss = []
+    training_accuracy = []
+    predictions = []
+    targets = []
+    for i, (x, y) in enumerate(train_data):
+        x, y = x.to(device), y.to(device)
+
+        optimizer.zero_grad()
+        outputs = cnn_model(x)
+        loss = criterion(outputs, y)
+
+        training_loss.append(loss.item())
+        loss.backward()
+        optimizer.step()
+        softmax = torch.exp(outputs).detach().cpu()
+        prob = list(softmax.numpy())
+        predictions.append(np.argmax(prob, axis=1))
+        targets.append(y)
+
+    for i in range(len(predictions)):
+        training_accuracy.append(accuracy_score(targets[i].cpu(), predictions[i]))
+
+    training_loss = np.average(training_loss)
+    training_accuracy = np.average(training_accuracy)*100
+
+    return training_loss, training_accuracy
+
+def eval_model(cnn_model, criterion, valid_data):
+
+    predictions = []
+    target = []
+    accuracy = []
+    epoch_loss = 0.0
+    with torch.no_grad():
+        for i, (x, y) in enumerate(valid_data):
+            x, y = x.to(device), y.to(device)
+
+            output = cnn_model(x)
+            loss = criterion(output, y)
+            epoch_loss += loss.item()
+            softmax = torch.exp(output).cpu()
+            prob = list(softmax.numpy())
+            prediction = np.argmax(prob, axis=1)
+            predictions.append(prediction)
+            target.append(y)
+
+    for i in range(len(predictions)):
+        accuracy.append(accuracy_score(target[i].cpu(), predictions[i]))
+
+    return epoch_loss/(i+1), np.average(accuracy)*100
+
 def run_CNN(train_data, valid_data):
     # model
     cnn_model = ConvolutionalNeuralNetwork().to(device)
     optimizer = optim.Adam(cnn_model.parameters(), lr=LEARNING_RATE, betas=(0.9, 0.999))
     criterion = CrossEntropyLoss()
 
+    train_losses = []
+    valid_losses = []
+    train_accs = []
+    valid_accs = []
+
     for epoch in range(1, NUM_EPOCHS + 1):
+        train_loss, train_acc = train_epoch(cnn_model, optimizer, criterion, train_data)
+        train_losses.append(train_loss)
+        train_accs.append(train_acc)
+        valid_loss, valid_acc = eval_model(cnn_model, criterion, valid_data)
+        valid_losses.append(valid_loss)
+        valid_accs.append(valid_acc)
 
-        train_loss = 0.0
-        training_loss = []
-        training_accuracy = []
-        for i, (x, y) in enumerate(train_data):
-            x, y = x.to(device), y.to(device)
-
-            optimizer.zero_grad()
-            outputs = cnn_model(x)
-            loss = criterion(outputs, y)
-
-            training_loss.append(loss.item())
-            loss.backward()
-            optimizer.step()
-
-            num_correct = sum(torch.argmax(torch.sigmoid(outputs)) == y)
-            acc = 100.0 * num_correct / len(y)
-            training_accuracy.append(acc.item())
-
-        training_loss = np.average(training_loss)
-        avg_accuracy = np.average(training_accuracy)
-        print('epoch: \t', epoch, '\t training loss: \t', training_loss, '\t training accuracy: \t', avg_accuracy)
+        print('epoch:', epoch, '\t training loss:', train_loss, '\t training accuracy:', train_acc,
+              '\t validation loss:', valid_loss, '\t validation accuracy:', valid_acc)
 
     # save the model
     torch.save(cnn_model.state_dict(), CNN_MODEL_PATH)
+
+
 
 
 def run_AutoEncoder(train_data, valid_data):
