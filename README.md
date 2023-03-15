@@ -1,6 +1,5 @@
 # MSAI437_Deep_Learning_HW2
 
-test commit
 
 # Datasets
 
