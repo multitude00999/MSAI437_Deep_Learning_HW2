@@ -6,6 +6,7 @@ from torch.utils.data.dataloader import DataLoader
 import matplotlib.pyplot as plt
 from torch import nn
 import torch.optim as optim
+import csv
 import shutil
 from sklearn.metrics import accuracy_score
 import numpy as np
@@ -42,16 +43,20 @@ print(f"Using device: {device}")
 # endregion Set-up & Configurations
 
 # region Data Loading
-def load_data(train_dir, valid_dir):
+
+def define_transformation():
     # transformations
     transformation = transforms.Compose([
-        # resize
-        transforms.Resize((IMG_HEIGHT, IMG_WIDTH)),
-        # transform to tensors
-        transforms.ToTensor(),
-        # normalize
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    # resize
+    transforms.Resize((IMG_HEIGHT, IMG_WIDTH)),
+    # transform to tensors
+    transforms.ToTensor(),
+    # normalize
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
+    return transformation
+def load_data(train_dir, valid_dir):
+    transformation = define_transformation()
     train_set = ImageFolder(
         root=train_dir, transform=transformation)
     valid_set = ImageFolder(
@@ -206,6 +211,42 @@ def run_CNN(train_data, valid_data):
     targets = np.concatenate(targets, axis=0)
     plot_CNN_confusion_matrix(predictions[:-1], targets[:-1])
 
+    # prediction on Blind set
+    predict_blind()
+
+def predict_blind():
+    test_dir = 'beans/test/'
+    cnn_model = ConvolutionalNeuralNetwork().to(device)
+    cnn_model.load_state_dict(torch.load(CNN_MODEL_PATH))
+    cnn_model.eval()
+    test_set = ImageFolder(
+        root=test_dir, transform=define_transformation())
+    test_data = torch.utils.data.DataLoader(
+        test_set,
+        batch_size=BATCH_SIZE,
+        shuffle=False
+    )
+    predictions = []
+    with torch.no_grad():
+        for i, (x, y) in enumerate(test_data):
+            x, y = x.to(device), y.to(device)
+            outputs = cnn_model(x)
+            _, predicted = torch.max(outputs.data, 1)
+            predictions.append(predicted.cpu())
+    predictions = [item.numpy() for item in predictions]
+    predictions = np.concatenate(predictions, axis=0)
+    output = []
+    idx = 0
+    for file_name in os.listdir(test_dir+'/blind'):
+        label = 'Healthy' if predictions[idx] == 0 else 'Unhealthy'
+        output.append({'filename':file_name, 'label':label})
+        idx += 1
+    myFile = open('CNN_blind_prediction.csv', 'w')
+    writer = csv.writer(myFile)
+    writer.writerow(['File Name', 'Label'])
+    for dictionary in output:
+        writer.writerow(dictionary.values())
+    myFile.close()
 
 def plot_CNN_learning_curves(train_losses, valid_losses, train_accs, valid_accs):
     epochs = [i for i in range(NUM_EPOCHS)]
@@ -289,20 +330,19 @@ def main():
     # for file in os.listdir(unhealthy_augmented):
     #     shutil.move(unhealthy_augmented + file, unhealthy)
 
-
-
-    # arguments parsing
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-model', type=str, default='CNN')
-    params = parser.parse_args()
-    torch.manual_seed(SEED)
-
-    train_data, valid_data = load_data(train_dir, valid_dir)
-
-    if params.model == 'CNN':
-        run_CNN(train_data, valid_data)
-    elif params.model == 'AutoEncoder':
-        run_AutoEncoder(train_data, valid_data)
+    predict_blind()
+    # # arguments parsing
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('-model', type=str, default='CNN')
+    # params = parser.parse_args()
+    # torch.manual_seed(SEED)
+    #
+    # train_data, valid_data = load_data(train_dir, valid_dir)
+    #
+    # if params.model == 'CNN':
+    #     run_CNN(train_data, valid_data)
+    # elif params.model == 'AutoEncoder':
+    #     run_AutoEncoder(train_data, valid_data)
 # endregion Main Function
 
 # region Data Augmentation
