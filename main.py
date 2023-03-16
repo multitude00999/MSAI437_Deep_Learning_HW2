@@ -6,12 +6,19 @@ from torch.utils.data.dataloader import DataLoader
 import matplotlib.pyplot as plt
 from torch import nn
 import torch.optim as optim
+import shutil
 from sklearn.metrics import accuracy_score
 import numpy as np
 import seaborn as sns
 from sklearn.metrics import confusion_matrix, classification_report
 import argparse
 import pickle
+import itertools
+import os
+import skimage.transform as T
+import skimage.io as io
+import random
+from skimage.util import random_noise
 # endregion Imports
 
 # region Global Constants
@@ -191,7 +198,13 @@ def run_CNN(train_data, valid_data):
     with open('CNN_targets.txt', 'wb') as f:
         pickle.dump(targets, f)
         f.close()
-    #plot_CNN_confusion_matrix(predictions, targets)
+    predictions = list(itertools.chain.from_iterable(predictions))
+    predictions = [item.numpy() for item in predictions]
+    predictions = np.concatenate(predictions, axis=0)
+    targets = list(itertools.chain.from_iterable(targets))
+    targets = [item.numpy() for item in targets]
+    targets = np.concatenate(targets, axis=0)
+    plot_CNN_confusion_matrix(predictions[:-1], targets[:-1])
 
 
 def plot_CNN_learning_curves(train_losses, valid_losses, train_accs, valid_accs):
@@ -218,13 +231,13 @@ def plot_CNN_learning_curves(train_losses, valid_losses, train_accs, valid_accs)
 def plot_CNN_confusion_matrix(preds, targets):
     cm = confusion_matrix(preds, targets)
     plt.figure(figsize=(6, 6))
-    sns.heatmap(cm, cmap="Blues", linecolor='black', linewidth=1, annot=True, fmt='', xticklabels=['REAL', 'FAKE'],
-                yticklabels=['REAL', 'FAKE'])
+    sns.heatmap(cm, cmap="Blues", linecolor='black', linewidth=1, annot=True, fmt='', xticklabels=['Healthy', 'Unhealthy'],
+                yticklabels=['Healthy', 'Unhealthy'])
     plt.xlabel("Predicted")
     plt.ylabel("Actual")
     plt.show()
 
-    print(classification_report(targets, preds, target_names=['Predicted Fake', 'Predicted True']))
+    print(classification_report(targets, preds, target_names=['Predicted Healthy', 'Predicted Unhealthy']))
 
 
 def run_AutoEncoder(train_data, valid_data):
@@ -233,15 +246,56 @@ def run_AutoEncoder(train_data, valid_data):
 # region Main Function
 def main():
 
+    # data loading
+    train_dir = "beans/train"
+    valid_dir = "beans/valid"
+
+    '''
+    Directory Structure - Already done, hence commenting the code
+    '''
+    # subfolder_names = ['healthy', 'unhealthy']
+    # path_names = [train_dir, valid_dir]
+    # # creating subfolders in the dataset to represent the two classes
+    # for path_name in path_names:
+    #     for subfolder_name in subfolder_names:
+    #         subfolder_path = os.path.join(path_name, subfolder_name)
+    #         os.makedirs(subfolder_path, exist_ok=True)
+    #
+    # # moving the data to their respective class folders
+    # for path_name in path_names:
+    #     for file_name in os.listdir(path_name):
+    #         if (file_name.split('_')[0] == 'healthy'):
+    #             file_path = os.path.join(path_name, file_name)
+    #             subfolder_path = os.path.join(path_name, 'healthy')
+    #             shutil.move(file_path, subfolder_path)
+    #         else:
+    #             file_path = os.path.join(path_name, file_name)
+    #             subfolder_path = os.path.join(path_name, 'unhealthy')
+    #             shutil.move(file_path, subfolder_path)
+
+    '''
+    Data Augmentation - Already done, hence commenting the function calls
+    '''
+    # healthy_augmented = 'beans/train/healthy/augmented/'
+    # healthy = 'beans/train/healthy/'
+    # unhealthy_augmented = 'beans/train/unhealthy/augmented/'
+    # unhealthy = 'beans/train/unhealthy/'
+    # # train - healthy
+    # augment_data('beans/train/healthy/', 'beans/train/healthy/augmented/')
+    # # train - unhealthy
+    # augment_data('beans/train/unhealthy/', 'beans/train/unhealthy/augmented/')
+    # for file in os.listdir(healthy_augmented):
+    #     shutil.move(healthy_augmented + file, healthy)
+    # for file in os.listdir(unhealthy_augmented):
+    #     shutil.move(unhealthy_augmented + file, unhealthy)
+
+
+
     # arguments parsing
     parser = argparse.ArgumentParser()
     parser.add_argument('-model', type=str, default='CNN')
     params = parser.parse_args()
     torch.manual_seed(SEED)
-
-    # data loading
-    train_dir = "beans/train"
-    valid_dir = "beans/valid"
 
     train_data, valid_data = load_data(train_dir, valid_dir)
 
@@ -250,6 +304,72 @@ def main():
     elif params.model == 'AutoEncoder':
         run_AutoEncoder(train_data, valid_data)
 # endregion Main Function
+
+# region Data Augmentation
+def augment_data(dir, savedir):
+    for file in os.listdir(dir):
+        if(file.endswith('.jpg') or file.endswith('.png')):
+            image = io.imread(dir + file)
+            operation = random.choice(['rotate', 'shift', 'fliplr', 'flipud', 'addnoise',
+                                      'rotateAndAddNoise', 'shiftAndAddNoise'])
+            if operation == 'rotate':
+                rotate(image, file, savedir)
+            elif operation == 'shift':
+                shift(image, file, savedir)
+            elif operation == 'fliplr':
+                fliplr(image, file, savedir)
+            elif operation == 'flipud':
+                flipud(image, file, savedir)
+            elif operation == 'addnoise':
+                addNoise(image, file, savedir)
+            elif operation == 'rotateAndAddNoise':
+                rotateAndAddNoise(image, file, savedir)
+            elif operation == 'shiftAndAddNoise':
+                shiftAndAddNoise(image, file, savedir)
+
+def rotate(image, file, savedir):
+    rotated = T.rotate(image, 30, mode='wrap')
+    tup = os.path.splitext(file)
+    io.imsave(savedir+tup[0]+'_rotated'+tup[1], rotated)
+
+def shift(image, file, savedir):
+    transform = T.AffineTransform(translation=(25, 25))
+    wrapShift = T.warp(image, transform, mode='wrap')
+    tup = os.path.splitext(file)
+    io.imsave(savedir+tup[0]+'_shifted'+tup[1], wrapShift)
+
+def fliplr(image, file, savedir):
+    flipLR = np.fliplr(image)
+    tup = os.path.splitext(file)
+    io.imsave(savedir+tup[0]+'_lrshifted'+tup[1], flipLR)
+
+def flipud(image, file, savedir):
+    flipIUD = np.flipud(image)
+    tup = os.path.splitext(file)
+    io.imsave(savedir+tup[0]+'_upshifted'+tup[1], flipIUD)
+
+def addNoise(image, file, savedir):
+    sigma = 0.155
+    # add random noise to the image
+    noisyRandom = random_noise(image, var=sigma ** 2)
+    tup = os.path.splitext(file)
+    io.imsave(savedir+tup[0]+'_addednoise'+tup[1], noisyRandom)
+
+def rotateAndAddNoise(image, file, savedir):
+    rotated = T.rotate(image, angle=30, mode='wrap')
+    sigma = 0.155
+    noisyRandom = random_noise(rotated, var=sigma ** 2)
+    tup = os.path.splitext(file)
+    io.imsave(savedir+tup[0]+'_rotatedAndNoise'+tup[1], noisyRandom)
+
+def shiftAndAddNoise(image, file, savedir):
+    transform = T.AffineTransform(translation=(25, 25))
+    wrapShift = T.warp(image, transform, mode='wrap')
+    sigma = 0.155
+    noisyRandom = random_noise(wrapShift, var=sigma ** 2)
+    tup = os.path.splitext(file)
+    io.imsave(savedir+tup[0]+'shiftedAndNoise'+tup[1], noisyRandom)
+# endregion Data Augmentation
 
 if __name__ == '__main__':
     main()
