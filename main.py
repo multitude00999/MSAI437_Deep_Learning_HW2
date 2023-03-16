@@ -330,19 +330,18 @@ def main():
     # for file in os.listdir(unhealthy_augmented):
     #     shutil.move(unhealthy_augmented + file, unhealthy)
 
-    predict_blind()
-    # # arguments parsing
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('-model', type=str, default='CNN')
-    # params = parser.parse_args()
-    # torch.manual_seed(SEED)
-    #
-    # train_data, valid_data = load_data(train_dir, valid_dir)
-    #
-    # if params.model == 'CNN':
-    #     run_CNN(train_data, valid_data)
-    # elif params.model == 'AutoEncoder':
-    #     run_AutoEncoder(train_data, valid_data)
+    # arguments parsing
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-model', type=str, default='CNN')
+    params = parser.parse_args()
+    torch.manual_seed(SEED)
+
+    train_data, valid_data = load_data(train_dir, valid_dir)
+
+    if params.model == 'CNN':
+        run_CNN(train_data, valid_data)
+    elif params.model == 'AutoEncoder':
+        run_AutoEncoder(train_data, valid_data)
 # endregion Main Function
 
 # region Data Augmentation
