@@ -1,10 +1,22 @@
 # region Imports
+<<<<<<< HEAD
 import torch
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
 from torch.utils.data.dataloader import DataLoader
 import matplotlib.pyplot as plt
 from torch import nn
+=======
+from torch.utils.data.dataloader import DataLoader
+import torch
+from torchvision import transforms
+from torchvision.datasets import ImageFolder
+import matplotlib.pyplot as plt
+from torch import nn
+import torchvision.datasets as datasets
+from torch.utils import data
+from torch.autograd import Variable
+>>>>>>> main
 import torch.optim as optim
 import csv
 import shutil
@@ -31,6 +43,11 @@ DROPOUT = 0.5  # dropout probability
 LEARNING_RATE = 0.001    # learning rate
 NUM_EPOCHS = 10   # number of epochs
 CNN_MODEL_PATH = 'cnn_classification_model.pt'  # path for saved CNN model
+<<<<<<< HEAD
+=======
+AE_MODEL_PATH = 'ae_model.pt'
+AE_CLASSIFY_MODEL_PATH = 'aAsc.pt'
+>>>>>>> main
 NUM_CLASSES = 2     # number of class labels
 # endregion Global Constants
 
@@ -55,6 +72,11 @@ def define_transformation():
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
     return transformation
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> main
 def load_data(train_dir, valid_dir):
     transformation = define_transformation()
     train_set = ImageFolder(
@@ -77,6 +99,65 @@ def load_data(train_dir, valid_dir):
     return train_data, valid_data
 # endregion Data Loading
 
+<<<<<<< HEAD
+=======
+class Autoencoder(nn.Module):
+    def __init__(self):
+        super(Autoencoder, self).__init__()
+        self.encoder = nn.Sequential(
+            nn.Conv2d(3, 12, 4, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(12, 24, 4, stride=2, padding=1),
+            nn.ReLU(),
+			nn.Conv2d(24, 48, 4, stride=2, padding=1),
+            nn.ReLU(),
+        )
+        self.decoder = nn.Sequential(
+			nn.ConvTranspose2d(48, 24, 4, stride=2, padding=1),  # [batch, 24, 8, 8]
+            nn.ReLU(),
+			nn.ConvTranspose2d(24, 12, 4, stride=2, padding=1),  # [batch, 12, 16, 16]
+            nn.ReLU(),
+            nn.ConvTranspose2d(12, 3, 4, stride=2, padding=1),   # [batch, 3, 32, 32]
+            nn.Tanh(),
+        )
+
+    def forward(self, x):
+        encoded = self.encoder(x)
+        decoded = self.decoder(encoded)
+        return encoded, decoded
+
+def create_model():
+    autoencoder = Autoencoder().to(device)
+    print_model(autoencoder.encoder, autoencoder.decoder)
+    return autoencoder
+
+def print_model(encoder, decoder):
+    print("============== Encoder ==============")
+    print(encoder)
+    print("============== Decoder ==============")
+    print(decoder)
+    print("")
+
+class encoderAsClassifier(nn.Module):
+    def __init__(self, autoencoder):
+        super(encoderAsClassifier, self).__init__()
+        self.encoder = autoencoder.encoder
+        self.flatten = nn.Flatten()
+        self.fc1 = nn.Linear(37632, 256)
+        self.relu4 = nn.ReLU()
+        self.dropout = nn.Dropout(DROPOUT)
+        self.fc2 = nn.Linear(256, NUM_CLASSES)
+
+    def forward(self, x):
+        encoded = self.encoder(x)
+        x = self.flatten(encoded)
+        x = self.fc1(x)
+        x = self.relu4(x)
+        x = self.dropout(x)
+        x = self.fc2(x)
+        return x
+
+>>>>>>> main
 # region CNN Class
 class ConvolutionalNeuralNetwork(torch.nn.Module):
     def __init__(self):
@@ -194,7 +275,11 @@ def run_CNN(train_data, valid_data):
     torch.save(cnn_model.state_dict(), CNN_MODEL_PATH)
 
     # plots
+<<<<<<< HEAD
     plot_CNN_learning_curves(train_losses, valid_losses, train_accs,
+=======
+    plot_learning_curves(train_losses, valid_losses, train_accs,
+>>>>>>> main
                              valid_accs)
 
     with open('CNN_preds.txt', 'wb') as f:
@@ -209,7 +294,11 @@ def run_CNN(train_data, valid_data):
     targets = list(itertools.chain.from_iterable(targets))
     targets = [item.numpy() for item in targets]
     targets = np.concatenate(targets, axis=0)
+<<<<<<< HEAD
     plot_CNN_confusion_matrix(predictions[:-1], targets[:-1])
+=======
+    plot_confusion_matrix(predictions[:-1], targets[:-1])
+>>>>>>> main
 
     # prediction on Blind set
     predict_blind()
@@ -248,28 +337,48 @@ def predict_blind():
         writer.writerow(dictionary.values())
     myFile.close()
 
+<<<<<<< HEAD
 def plot_CNN_learning_curves(train_losses, valid_losses, train_accs, valid_accs):
+=======
+def plot_learning_curves(train_losses, valid_losses, train_accs, valid_accs):
+>>>>>>> main
     epochs = [i for i in range(NUM_EPOCHS)]
     fig, ax = plt.subplots(1, 2)
     fig.set_size_inches(20, 10)
 
+<<<<<<< HEAD
     ax[0].plot(epochs, train_accs, 'go-', label='Training Accuracy (CNN)')
     ax[0].plot(epochs, valid_accs, 'ro-', label='validation Accuracy (CNN)')
     ax[0].set_title('Training & Validation Accuracy (CNN)')
+=======
+    ax[0].plot(epochs, train_accs, 'go-', label='Training Accuracy')
+    ax[0].plot(epochs, valid_accs, 'ro-', label='validation Accuracy')
+    ax[0].set_title('Training & Validation Accuracy')
+>>>>>>> main
     ax[0].legend()
     ax[0].set_xlabel("Epochs")
     ax[0].set_ylabel("Accuracy")
 
+<<<<<<< HEAD
     ax[1].plot(epochs, train_losses, 'go-', label='Training Loss (CNN)')
     ax[1].plot(epochs, valid_losses, 'ro-', label='Validation Loss (CNN)')
     ax[1].set_title('Training & Validation Loss (CNN)')
+=======
+    ax[1].plot(epochs, train_losses, 'go-', label='Training Loss')
+    ax[1].plot(epochs, valid_losses, 'ro-', label='Validation Loss')
+    ax[1].set_title('Training & Validation Loss')
+>>>>>>> main
     ax[1].legend()
     ax[1].set_xlabel("Epochs")
     ax[1].set_ylabel("Loss")
 
     plt.show()
 
+<<<<<<< HEAD
 def plot_CNN_confusion_matrix(preds, targets):
+=======
+def plot_confusion_matrix(preds, targets):
+>>>>>>> main
     cm = confusion_matrix(preds, targets)
     plt.figure(figsize=(6, 6))
     sns.heatmap(cm, cmap="Blues", linecolor='black', linewidth=1, annot=True, fmt='', xticklabels=['Healthy', 'Unhealthy'],
@@ -282,7 +391,146 @@ def plot_CNN_confusion_matrix(preds, targets):
 
 
 def run_AutoEncoder(train_data, valid_data):
+<<<<<<< HEAD
     pass
+=======
+    train_folder = "Plants_2/train/"
+    train_dataset = datasets.ImageFolder(root=train_folder,
+                                         transform=define_transformation)
+
+    train_loader = data.DataLoader(train_dataset, batch_size=8, shuffle=True)
+
+    val_folder = "./Plants_2/valid/"
+    val_dataset = datasets.ImageFolder(root=val_folder,
+                                       transform=define_transformation)
+
+    val_loader = data.DataLoader(val_dataset, batch_size=8, shuffle=True)
+
+    test_folder = "./Plants_2/test/"
+    test_dataset = datasets.ImageFolder(root=test_folder,
+                                        transform=define_transformation)
+
+    test_loader = data.DataLoader(test_dataset, batch_size=8, shuffle=True)
+
+    autoencoder = create_model()
+
+    criterion = torch.nn.MSELoss()
+    optimizer = optim.Adam(autoencoder.parameters())
+
+    for epoch in range(10):
+        running_loss = 0.0
+        for i, (inputs, _) in enumerate(train_loader, 0):
+            inputs = get_torch_vars(inputs)
+            # ============ Forward ============
+            encoded, outputs = autoencoder(inputs)
+            loss = criterion(outputs, inputs)
+            # ============ Backward ============
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            # ============ Logging ============
+            running_loss += loss.data
+            if i % 5 == 4:
+                print('[%d, %5d] loss: %.3f' %
+                      (epoch + 1, i + 1, running_loss / 5))
+                running_loss = 0.0
+
+    # save the model
+    torch.save(autoencoder.state_dict(), AE_MODEL_PATH)
+    classify_AE()
+
+def classify_AE():
+
+    autoencoder = create_model().to(device)
+    autoencoder.load_state_dict(torch.load(AE_MODEL_PATH))
+    autoencoder.eval()
+
+    eAsC = encoderAsClassifier(autoencoder).to(device)
+    train_dir = "beans/train"
+    valid_dir = "beans/valid"
+    train_data, valid_data = load_data(train_dir, valid_dir)
+    optimizer = optim.Adam(eAsC.parameters(), lr=LEARNING_RATE, betas=(0.9, 0.999))
+    criterion = nn.CrossEntropyLoss()
+
+    train_losses = []
+    valid_losses = []
+    train_accs = []
+    valid_accs = []
+    predictions = []
+    targets = []
+
+    for epoch in range(1, NUM_EPOCHS + 1):
+        train_loss, train_acc = train_epoch(eAsC, optimizer, criterion, train_data)
+        train_losses.append(train_loss)
+        train_accs.append(train_acc)
+        valid_loss, valid_acc, pred, target = eval_model(eAsC, criterion, valid_data)
+        valid_losses.append(valid_loss)
+        valid_accs.append(valid_acc)
+        predictions.append(pred)
+        targets.append(target)
+
+        print('epoch:', epoch, '\t training loss:', train_loss, '\t training accuracy:', train_acc,
+              '\t validation loss:', valid_loss, '\t validation accuracy:', valid_acc)
+
+    # save the model
+    torch.save(eAsC.state_dict(), AE_CLASSIFY_MODEL_PATH)
+
+    # plots
+    plot_learning_curves(train_losses, valid_losses, train_accs,
+                             valid_accs)
+
+    predictions = list(itertools.chain.from_iterable(predictions))
+    predictions = [item.numpy() for item in predictions]
+    predictions = np.concatenate(predictions, axis=0)
+    targets = list(itertools.chain.from_iterable(targets))
+    targets = [item.numpy() for item in targets]
+    targets = np.concatenate(targets, axis=0)
+    plot_confusion_matrix(predictions[:-1], targets[:-1])
+
+    # prediction on Blind set
+    predict_blind_AE(autoencoder)
+
+def predict_blind_AE(autoencoder):
+    eAsC = encoderAsClassifier(autoencoder).to(device)
+    eAsC.load_state_dict(torch.load(AE_CLASSIFY_MODEL_PATH))
+    eAsC.eval()
+    test_dir = 'beans/test/'
+    test_set = ImageFolder(
+        root=test_dir, transform=define_transformation())
+    test_data = torch.utils.data.DataLoader(
+        test_set,
+        batch_size=BATCH_SIZE,
+        shuffle=False
+    )
+    predictions = []
+    with torch.no_grad():
+        for i, (x, y) in enumerate(test_data):
+            x, y = x.to(device), y.to(device)
+            outputs = eAsC(x)
+            _, predicted = torch.max(outputs.data, 1)
+            predictions.append(predicted.cpu())
+    predictions = [item.numpy() for item in predictions]
+    predictions = np.concatenate(predictions, axis=0)
+    output = []
+    idx = 0
+    for file_name in os.listdir(test_dir + '/blind'):
+        label = 'Healthy' if predictions[idx] == 0 else 'Unhealthy'
+        output.append({'filename': file_name, 'label': label})
+        idx += 1
+    myFile = open('AE_blind_prediction.csv', 'w')
+    writer = csv.writer(myFile)
+    writer.writerow(['File Name', 'Label'])
+    for dictionary in output:
+        writer.writerow(dictionary.values())
+    myFile.close()
+
+
+def get_torch_vars(x):
+    x = x.to(device)
+    return Variable(x)
+
+>>>>>>> main
 
 # region Main Function
 def main():
@@ -412,4 +660,7 @@ def shiftAndAddNoise(image, file, savedir):
 
 if __name__ == '__main__':
     main()
+<<<<<<< HEAD
 
+=======
+>>>>>>> main
