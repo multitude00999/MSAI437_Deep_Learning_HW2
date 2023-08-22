@@ -15,7 +15,7 @@
 
 
 | Model | Train accuracy | Valid accuracy|
-|:---: |:---:| 
+|:---: |:---:| :---:|
 |Autoencoder| 98.13| 93|
 |CNN |93.4 |90|
 
