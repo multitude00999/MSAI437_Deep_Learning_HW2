@@ -1,5 +1,6 @@
 # Bean leaf health screening using autoencoder
 
+Methodology discussed in [report](report.pdf)
 # File structure
 
 |File | description|
