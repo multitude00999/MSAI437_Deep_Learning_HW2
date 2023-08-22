@@ -1,4 +1,4 @@
-# MSAI437_Deep_Learning_HW2: Computer_Vision_iBean_Dataset
+# Bean leaf health screening using autoencoder: Computer_Vision_iBean_Dataset
 
 # File structure
 
