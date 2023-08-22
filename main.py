@@ -1,12 +1,4 @@
 # region Imports
-<<<<<<< HEAD
-import torch
-from torchvision import transforms
-from torchvision.datasets import ImageFolder
-from torch.utils.data.dataloader import DataLoader
-import matplotlib.pyplot as plt
-from torch import nn
-=======
 from torch.utils.data.dataloader import DataLoader
 import torch
 from torchvision import transforms
@@ -16,7 +8,6 @@ from torch import nn
 import torchvision.datasets as datasets
 from torch.utils import data
 from torch.autograd import Variable
->>>>>>> main
 import torch.optim as optim
 import csv
 import shutil
@@ -43,11 +34,8 @@ DROPOUT = 0.5  # dropout probability
 LEARNING_RATE = 0.001    # learning rate
 NUM_EPOCHS = 10   # number of epochs
 CNN_MODEL_PATH = 'cnn_classification_model.pt'  # path for saved CNN model
-<<<<<<< HEAD
-=======
 AE_MODEL_PATH = 'ae_model.pt'
 AE_CLASSIFY_MODEL_PATH = 'aAsc.pt'
->>>>>>> main
 NUM_CLASSES = 2     # number of class labels
 # endregion Global Constants
 
@@ -72,11 +60,8 @@ def define_transformation():
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
     return transformation
-<<<<<<< HEAD
-=======
 
 
->>>>>>> main
 def load_data(train_dir, valid_dir):
     transformation = define_transformation()
     train_set = ImageFolder(
@@ -99,8 +84,6 @@ def load_data(train_dir, valid_dir):
     return train_data, valid_data
 # endregion Data Loading
 
-<<<<<<< HEAD
-=======
 class Autoencoder(nn.Module):
     def __init__(self):
         super(Autoencoder, self).__init__()
@@ -157,7 +140,6 @@ class encoderAsClassifier(nn.Module):
         x = self.fc2(x)
         return x
 
->>>>>>> main
 # region CNN Class
 class ConvolutionalNeuralNetwork(torch.nn.Module):
     def __init__(self):
@@ -275,11 +257,7 @@ def run_CNN(train_data, valid_data):
     torch.save(cnn_model.state_dict(), CNN_MODEL_PATH)
 
     # plots
-<<<<<<< HEAD
-    plot_CNN_learning_curves(train_losses, valid_losses, train_accs,
-=======
     plot_learning_curves(train_losses, valid_losses, train_accs,
->>>>>>> main
                              valid_accs)
 
     with open('CNN_preds.txt', 'wb') as f:
@@ -294,11 +272,7 @@ def run_CNN(train_data, valid_data):
     targets = list(itertools.chain.from_iterable(targets))
     targets = [item.numpy() for item in targets]
     targets = np.concatenate(targets, axis=0)
-<<<<<<< HEAD
-    plot_CNN_confusion_matrix(predictions[:-1], targets[:-1])
-=======
     plot_confusion_matrix(predictions[:-1], targets[:-1])
->>>>>>> main
 
     # prediction on Blind set
     predict_blind()
@@ -337,48 +311,28 @@ def predict_blind():
         writer.writerow(dictionary.values())
     myFile.close()
 
-<<<<<<< HEAD
-def plot_CNN_learning_curves(train_losses, valid_losses, train_accs, valid_accs):
-=======
 def plot_learning_curves(train_losses, valid_losses, train_accs, valid_accs):
->>>>>>> main
     epochs = [i for i in range(NUM_EPOCHS)]
     fig, ax = plt.subplots(1, 2)
     fig.set_size_inches(20, 10)
 
-<<<<<<< HEAD
-    ax[0].plot(epochs, train_accs, 'go-', label='Training Accuracy (CNN)')
-    ax[0].plot(epochs, valid_accs, 'ro-', label='validation Accuracy (CNN)')
-    ax[0].set_title('Training & Validation Accuracy (CNN)')
-=======
     ax[0].plot(epochs, train_accs, 'go-', label='Training Accuracy')
     ax[0].plot(epochs, valid_accs, 'ro-', label='validation Accuracy')
     ax[0].set_title('Training & Validation Accuracy')
->>>>>>> main
     ax[0].legend()
     ax[0].set_xlabel("Epochs")
     ax[0].set_ylabel("Accuracy")
 
-<<<<<<< HEAD
-    ax[1].plot(epochs, train_losses, 'go-', label='Training Loss (CNN)')
-    ax[1].plot(epochs, valid_losses, 'ro-', label='Validation Loss (CNN)')
-    ax[1].set_title('Training & Validation Loss (CNN)')
-=======
     ax[1].plot(epochs, train_losses, 'go-', label='Training Loss')
     ax[1].plot(epochs, valid_losses, 'ro-', label='Validation Loss')
     ax[1].set_title('Training & Validation Loss')
->>>>>>> main
     ax[1].legend()
     ax[1].set_xlabel("Epochs")
     ax[1].set_ylabel("Loss")
 
     plt.show()
 
-<<<<<<< HEAD
-def plot_CNN_confusion_matrix(preds, targets):
-=======
 def plot_confusion_matrix(preds, targets):
->>>>>>> main
     cm = confusion_matrix(preds, targets)
     plt.figure(figsize=(6, 6))
     sns.heatmap(cm, cmap="Blues", linecolor='black', linewidth=1, annot=True, fmt='', xticklabels=['Healthy', 'Unhealthy'],
@@ -391,9 +345,6 @@ def plot_confusion_matrix(preds, targets):
 
 
 def run_AutoEncoder(train_data, valid_data):
-<<<<<<< HEAD
-    pass
-=======
     train_folder = "Plants_2/train/"
     train_dataset = datasets.ImageFolder(root=train_folder,
                                          transform=define_transformation)
@@ -530,7 +481,6 @@ def get_torch_vars(x):
     x = x.to(device)
     return Variable(x)
 
->>>>>>> main
 
 # region Main Function
 def main():
@@ -660,7 +610,3 @@ def shiftAndAddNoise(image, file, savedir):
 
 if __name__ == '__main__':
     main()
-<<<<<<< HEAD
-
-=======
->>>>>>> main
