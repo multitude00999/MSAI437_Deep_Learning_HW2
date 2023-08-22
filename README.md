@@ -1,4 +1,4 @@
-# Bean leaf health screening using autoencoder: Computer_Vision_iBean_Dataset
+# Bean leaf health screening using autoencoder
 
 # File structure
 
